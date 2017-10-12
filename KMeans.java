@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class KMeans extends ClusteringAlgorithm
 {
@@ -38,6 +39,8 @@ public class KMeans extends ClusteringAlgorithm
 	// Results of test()
 	private double hitrate;
 	private double accuracy;
+
+
 	
 	public KMeans(int k, Vector<float[]> trainData, Vector<float[]> testData, int dim)
 	{
@@ -53,9 +56,56 @@ public class KMeans extends ClusteringAlgorithm
 			clusters[ic] = new Cluster();
 	}
 
+	public void printarray (int[] array) {
+		System.out.println("[");
+		for (int i = 0; i < array.length; i++) {
+			System.out.print(array[i]+ " ");
+		}
+		System.out.println("]");
+	}
+
+	public void partitionClusters(){
+		/// Generate a random permutation of the training data
+		for( int i = 0; i < trainData.size() ; i++){
+			int randomNum = ThreadLocalRandom.current().nextInt(0, k);
+			clusters[randomNum].currentMembers.add(i);
+		}
+
+		/*
+		permutations = Collections.shuffle(Arrays.asList(permutations));
+		printarray(permutations);
+		/// Spread the people evenly on each cluster
+		for ( int idx = 0; idx < k  ; idx++){
+			for( int peopleIdx = idx * k; peopleIdx < idx * k + trainData.size() / k; peopleIdx++){
+				clusters[idx].currentMembers.add(permutations[peopleIdx]);
+			}
+		}
+		/// Add the remaining people to the last cluster
+		for( int remainderIdx = trainData.size() - trainData.size() % k; remainderIdx < trainData.size(); remainderIdx++){
+				clusters[remainderIdx].currentMembers.add(permutations[remainderIdx]);
+		}
+		*/
+	}
+
+	/// Generates a list of numbers from 0 to x
+	public int[] loop(int x) {
+    	int[] a = new int[x];
+    	for (int i = 0; i < x; ++i) {
+       	  a[i] = i;
+    	}
+    	return a;
+	}
 
 	public boolean train()
 	{
+
+		// Step 1: Select an initial random partioning with k clusters
+		partitionClusters();
+
+
+		showMembers();
+
+
 	 	//implement k-means algorithm here:
 		// Step 1: Select an initial random partioning with k clusters
 		// Step 2: Generate a new partition by assigning each datapoint to its closest cluster center
