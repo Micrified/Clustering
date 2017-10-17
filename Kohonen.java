@@ -38,6 +38,13 @@ public class Kohonen extends ClusteringAlgorithm
 			{
 				currentMembers = new HashSet<Integer>();
 			}
+
+			/// initialize randomly
+			public void initialize(){
+				
+			}
+
+			
 	}
 	
 	public Kohonen(int n, int epochs, Vector<float[]> trainData, Vector<float[]> testData, int dim)
@@ -58,19 +65,63 @@ public class Kohonen extends ClusteringAlgorithm
 			for (int i2 = 0; i2 < n; i2++) {
 				clusters[i][i2] = new Cluster();
 				clusters[i][i2].prototype = new float[dim];
+				/// initialize the prototype randomly
+				float[] currentPrototypes = clusters[i][i2].getFloat();
+				for ( int idx = 0; idx < dim; idx++){
+					clusters[i][i2].setPrototype(idx) = Math.round(Math.random()) (float);
+				}
+				
 			}
 		}
 	}
 
-	
+	/// Method that calculates the euclidean distance between two vectors
+	public float euclideanDistance(float[] vec1, float[] vec2)
+	{
+		int sum = 0;
+		for( int i = 0; i < vec1.size(); i++)
+		{
+			sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
+		}
+		return Math.sqrt(sum);
+	}
+
 	public boolean train()
 	{
-		// Step 1: initialize map with random vectors (A good place to do this, is in the initialisation of the clusters)
-		// Repeat 'epochs' times:
-			// Step 2: Calculate the squareSize and the learningRate, these decrease lineary with the number of epochs.
-			// Step 3: Every input vector is presented to the map (always in the same order)
+
+		/// Repeat 'epochs' times:
+		for( int t = 0; t < this.epochs; t++)
+		{	
+			/// Calculate current learning rate and radius
+			learnRate = 0.8 * (1 - (t / this.epochs));
+			radius = this.n / 2 * (1 - (t / this.epochs));
+			/// Iterate through all training points
+			for( int trainIdx = 0; trainIdx < trainData.size(); trainIdx++ )
+			{
+				float[] trainVec = trainData.get(trainIdx);
+				/// Find BMU by iterating through all prototypes
+				float minDist = Float.MAX_VALUE;
+				Cluster BMU;
+				for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
+				{
+					for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
+					{
+						float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2])
+						if( dist < minDist)
+						{
+							minDist = dist;
+							BMU = clusters[protIdx1][protIdx2];
+						}
+					{
+				}
+			}
+			
+	
+		
 			// For each vector its Best Matching Unit is found, and :
 				// Step 4: All nodes within the neighbourhood of the BMU are changed, you don't have to use distance relative learning.
+		}
+			
 		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice
 		return true;
 	}
