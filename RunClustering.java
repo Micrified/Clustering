@@ -42,11 +42,12 @@ public class RunClustering
 		boolean startUp = true;
 		while (true) {
 			if (startUp) {
-				 // Ask for algoritm ans its apropriate parameters. Algorithm gets copies of the datavectors (fail-prove)
+				// Ask for algoritm and its appropriate parameters. Algorithm gets copies of the data vectors (fail-proof)
 				initializeAlgorithm();
 
 				// Training
 				System.out.print("Perform the actual training! (hit enter)"); 
+				
 				// You wait for authorisation because in real applications,training and or testing may take days.
 				waitForAuthorisation();   
 				System.out.println("Training ...");
