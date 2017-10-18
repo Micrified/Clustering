@@ -327,28 +327,31 @@ public class KMeans extends ClusteringAlgorithm
 		///			Count prefetched, hits, requests.
 		int prefetched = 0, hits = 0, requests = 0;
 		for (int i = 0; i < n; i++) {
+
+			/// Extract client vector, and client cluster prototype.
 			float[] v = this.testData.elementAt(i);
 			float[] p = assignedClusters[i].prototype;
 
 			for (int j = 0; j < dim; j++) {
 				Boolean wasPrefetched = (p[i] > prefetchThreshold);
-
-				/// Add to requests.
-				requests += (v[i] != 0);
-
-				/// Add to prefetched.
-				prefetched += (wasPrefetched == true ? 1 : 0);
+				Boolean requested = (v[i] != 0);
 				
-				/// Add to hits if
-				/// 1. Didn't request the site and site wasn't prefetched.
-				/// 2. Did request the site and site was prefetched.
-				if ((v[i] == 0) ^ wasPrefetched) {
-					hits++;
+				/// Add to requests.
+				requests += (requested ? 1 : 0);
+
+				/// Add prefetched if prefetched, hits if also requested.
+				if (wasPrefetched) {
+					prefetched++;
+					hits += (requested ? 1 : 0);
 				}
 			}
 
 		}
 
+		/// Assign to global variables.
+		this.hitrate = ((double)hits / (double)requests);
+		this.accuracy = ((double)requests / (double)prefetched);
+		showTest();
 		return true;
 	}
 
@@ -356,10 +359,11 @@ public class KMeans extends ClusteringAlgorithm
 	// The following members are called by RunClustering, in order to present information to the user
 	public void showTest()
 	{
-		System.out.println("Prefetch threshold=" + this.prefetchThreshold);
-		System.out.println("Hitrate: " + this.hitrate);
-		System.out.println("Accuracy: " + this.accuracy);
-		System.out.println("Hitrate+Accuracy=" + (this.hitrate + this.accuracy));
+		System.out.println("\n***************************** Results *****************************");
+		System.out.format("Prefetch threshold:\t\t %.7f\n", this.prefetchThreshold);
+		System.out.format("Hitrate:\t\t\t %.7f\n", this.hitrate);
+		System.out.format("Accuracy:\t\t\t %.7f\n", this.accuracy);
+		System.out.format("Hitrate+Accuracy:\t\t %.7f\n", (this.hitrate + this.accuracy));
 	}
 	
 	public void showMembers()
