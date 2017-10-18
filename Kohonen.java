@@ -41,11 +41,20 @@ public class Kohonen extends ClusteringAlgorithm
 				currentMembers = new HashSet<Integer>();
 			}
 
-			/// initialize randomly
-			public void initialize(){
-				
+			public float[] getFloat()
+			{
+				return prototype;
 			}
 
+			public void setFloat(float[] newPrototype)
+			{
+				prototype = newPrototype;
+			}
+
+			public void setPrototype(int idx, float value)
+			{
+				prototype[idx] = value;
+			}
 			
 	}
 	
@@ -63,15 +72,18 @@ public class Kohonen extends ClusteringAlgorithm
 
 		// Here n*n new cluster are initialized
 		clusters = new Cluster[n][n];
-		for (int i = 0; i < n; i++)  {
-			for (int i2 = 0; i2 < n; i2++) {
+		for (int i = 0; i < n; i++)  
+		{
+			for (int i2 = 0; i2 < n; i2++) 
+			{
 				clusters[i][i2] = new Cluster();
 				clusters[i][i2].prototype = new float[dim];
 				/// initialize the prototype randomly
-				//float[] currentPrototypes = clusters[i][i2].getFloat();
-				//for ( int idx = 0; idx < dim; idx++){
-				//	clusters[i][i2].setPrototype(idx) = Math.round(Math.random()) (float);
-				//}
+				float[] currentPrototypes = clusters[i][i2].getFloat();
+				for ( int idx = 0; idx < dim; idx++)
+				{
+					clusters[i][i2].setPrototype(idx, (float) Math.round(Math.random()) );
+				}
 				
 			}
 		}
@@ -89,67 +101,73 @@ public class Kohonen extends ClusteringAlgorithm
 	}
 
 	/// Find the best matching unit (BMU)
-	public Cluster findBMU()
+	public Cluster findBMU(float[] trainVec)
 	{	
 		/// Find BMU by iterating through all prototypes
-		float minDist = Float.MAX_VALUE;
+		double minDist = Double.MAX_VALUE;
 		Cluster BMU;
 		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
-				float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2])
-				if( dist < minDist)
-						{
-					minDist = dist;	
+				double distToProt = euclideanDistance(trainVec, clusters[protIdx1][protIdx2].getFloat());
+				if (distToProt < minDist)
+				{
+					minDist = distToProt;
 					BMU = clusters[protIdx1][protIdx2];
-					BMU.x  = protIdx1;
+					BMU.x = protIdx1;
 					BMU.y = protIdx2;
 				}
-			{
+			}
 		}
 		return BMU;
 	}
 
 	/// Adjust all prototypes in the neighbourhood of the BMU
-	public void adjustNeighbourhood(Cluster BMU, double radius, double learnRate)
+	public void adjustNeighbourhood(Cluster BMU, double radius, double learnRate, float[] trainVec)
 	{
 		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
 				/// If a prototype is within the radius, adjust it
-				double dist = (protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y);
+				float dist = (protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y);
 				if ( dist <= radius * radius) 
 				{
-					clusters[protIdx1][protIdx2] = (1-learnRate) * clusters[protIdx1][protIdx2] + learnRate * trainVec;
+					float[] prototypeOfCluster = clusters[protIdx1][protIdx2].getFloat();
+					for(int i = 0; i < trainVec.length; i++)
+					{
+						prototypeOfCluster[i] = (float) ((1-learnRate) * prototypeOfCluster[i] + learnRate * trainVec[i]);
+					}
+					clusters[protIdx1][protIdx2].setFloat(prototypeOfCluster);
+					//clusters[protIdx1][protIdx2].setFloat((1-learnRate) * clusters[protIdx1][protIdx2].getFloat() + learnRate * trainVec);
 				}
+			}
+		}
 	}
 
 	public boolean train()
 	{
-		/*
+		
 		/// Repeat 'epochs' times:
 		for( int t = 0; t < this.epochs; t++)
 		{	
-			if( this.epochs % t
+	
+			System.out.println(t/this.epochs);
 			/// Calculate current learning rate and radius
-			double learnRate = 0.8 * (1 - (t / this.epochs));
+			float learnRate = (float) 0.8 * (1 - (t / this.epochs));
 			double radius = this.n / 2 * (1 - (t / this.epochs));
 			/// Iterate through all training points
 			for( int trainIdx = 0; trainIdx < trainData.size(); trainIdx++ )
 			{
 				float[] trainVec = trainData.get(trainIdx);
-				Cluster BMU = findBMU();
-				adjustNeighbourhood(BMU, radius, learnRate);
+				Cluster BMU = findBMU(trainVec);
+				adjustNeighbourhood(BMU, radius, learnRate, trainVec);
 				
 			}
-			
-			// For each vector its Best Matching Unit is found, and :
-				// Step 4: All nodes within the neighbourhood of the BMU are changed, you don't have to use distance relative learning.
 		}
 			
-		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice */
+		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice 
 		return true;
 	}
 	
