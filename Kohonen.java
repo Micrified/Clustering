@@ -66,20 +66,20 @@ public class Kohonen extends ClusteringAlgorithm
 				clusters[i][i2] = new Cluster();
 				clusters[i][i2].prototype = new float[dim];
 				/// initialize the prototype randomly
-				float[] currentPrototypes = clusters[i][i2].getFloat();
-				for ( int idx = 0; idx < dim; idx++){
-					clusters[i][i2].setPrototype(idx) = Math.round(Math.random()) (float);
-				}
+				//float[] currentPrototypes = clusters[i][i2].getFloat();
+				//for ( int idx = 0; idx < dim; idx++){
+				//	clusters[i][i2].setPrototype(idx) = Math.round(Math.random()) (float);
+				//}
 				
 			}
 		}
 	}
 
 	/// Method that calculates the euclidean distance between two vectors
-	public float euclideanDistance(float[] vec1, float[] vec2)
+	public double euclideanDistance(float[] vec1, float[] vec2)
 	{
-		int sum = 0;
-		for( int i = 0; i < vec1.size(); i++)
+		double sum = 0;
+		for( int i = 0; i < vec1.length; i++)
 		{
 			sum += (vec1[i] - vec2[i]) * (vec1[i] - vec2[i]);
 		}
@@ -88,7 +88,7 @@ public class Kohonen extends ClusteringAlgorithm
 
 	public boolean train()
 	{
-
+		/*
 		/// Repeat 'epochs' times:
 		for( int t = 0; t < this.epochs; t++)
 		{	
@@ -106,7 +106,7 @@ public class Kohonen extends ClusteringAlgorithm
 				{
 					for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 					{
-						float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2])
+						float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2]);
 						if( dist < minDist)
 						{
 							minDist = dist;
@@ -122,7 +122,7 @@ public class Kohonen extends ClusteringAlgorithm
 				// Step 4: All nodes within the neighbourhood of the BMU are changed, you don't have to use distance relative learning.
 		}
 			
-		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice
+		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice */
 		return true;
 	}
 	
