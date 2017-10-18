@@ -119,8 +119,8 @@ public class Kohonen extends ClusteringAlgorithm
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
 				/// If a prototype is within the radius, adjust it
-				double dist = Math.sqrt((protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y));
-				if ( dist <= radius ) 
+				double dist = (protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y);
+				if ( dist <= radius * radius) 
 				{
 					clusters[protIdx1][protIdx2] = (1-learnRate) * clusters[protIdx1][protIdx2] + learnRate * trainVec;
 				}
