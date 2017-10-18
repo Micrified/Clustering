@@ -105,7 +105,7 @@ public class Kohonen extends ClusteringAlgorithm
 	{	
 		/// Find BMU by iterating through all prototypes
 		double minDist = Double.MAX_VALUE;
-		Cluster BMU;
+		Cluster BMU = clusters[0][0];
 		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
