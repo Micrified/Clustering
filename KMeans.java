@@ -28,15 +28,59 @@ public class KMeans extends ClusteringAlgorithm
 		Set<Integer> currentMembers;
 		Set<Integer> previousMembers;
 		  
-		public Cluster()
+		public Cluster(int dim)
 		{
 			currentMembers = new HashSet<Integer>();
 			previousMembers = new HashSet<Integer>();
+			prototype = new float[dim];
 		}
 
+		/// Returns true if the cluster contains given index.
+		public Boolean containsIndex (int n) {
+			for (Integer i : currentMembers) {
+				if (i.intValue() == n) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/// Computes the mean (prototype) feature vector.
+		public void updatePrototype (Vector<float[]> data) {
+			int n = prototype.length, d = currentMembers.size();
+			prototype = new float[n];
+
+			/// Iterate across all member vectors, add up values.
+			for (Integer i : currentMembers) {
+				float[] v = data.elementAt(i.intValue());
+				for (int j = 0; j < n; j++) {
+					prototype[j] += v[j];
+				}
+			}
+
+			/// Divide out by total members size to get mean.
+			for (int i = 0; i < n; i++) {
+				prototype[i] /= d;
+			}
+		}
+
+		/// Computes the number of differences betweeen the previous and current members.
+		public int membershipChanges() {
+			int changed = 0;
+
+			for (Integer i : currentMembers) {
+				changed += (previousMembers.contains(i) == true) ? 0 : 1;
+			}
+
+			return changed;
+		}
+
+		/// Prints a description of the Cluster instance.
 		public void printDescription () {
-			System.out.println("\n** Current Members **");
-			printSet(currentMembers);
+			System.out.println("----------------------------------[ Cluster ]-----------------------------------");
+			System.out.print("Prototype:\t"); printArray(prototype);
+			System.out.print("Curr Memb:\t"); printSet(currentMembers);
+			System.out.print("Prev Memb:\t"); printSet(previousMembers);
 		}
 	}
 	// These vectors contains the feature vectors you need; the feature vectors are float arrays.
@@ -62,7 +106,7 @@ public class KMeans extends ClusteringAlgorithm
 		// Here k new cluster are initialized
 		clusters = new Cluster[k];
 		for (int ic = 0; ic < k; ic++)
-			clusters[ic] = new Cluster();
+			clusters[ic] = new Cluster(dim);
 	}
 
 	/******************************* PRINTING METHODS *****************************/
@@ -85,11 +129,11 @@ public class KMeans extends ClusteringAlgorithm
 				System.out.print(",");
 			}
 		}
-		System.out.print("]");
+		System.out.println("]");
 	}
 
 	/// Prints all information within a vector.
-	public void printVector (Vector<float[]> vector) {
+	public static void printVector (Vector<float[]> vector) {
 		int m, n = vector.size();
 		float[] v;
 
@@ -105,20 +149,18 @@ public class KMeans extends ClusteringAlgorithm
 	}
 
 	/// Prints a float array.
-	public void printArray (float[] array) {
+	public static void printArray (float[] array) {
 		System.out.print("[");
 		for (int i = 0; i < array.length; i++) {
-			System.out.format("%.0f", array[i]);
+			System.out.format("%.3f", array[i]);
+			if (i < array.length - 1) {
+				System.out.print(",");
+			}
 		}
 		System.out.println("]");
 	}
 
 	/******************************* TRAINING METHODS *****************************/
-
-	/// Returns a random permutation from zero to (n - 1)
-	public int[] randomPermutation (int n) {
-		
-	}
 
 	/// Partitions given data to random clusters.
 	public void randomPartition (Vector<float[]> data, Cluster[] clusters) {
@@ -127,67 +169,143 @@ public class KMeans extends ClusteringAlgorithm
 		}
 	}
 
-	/// Stages all clusters for data assignment by moving current members to old.
-	public void stageClustersForPointAssignment(Cluster [] clusters) {
+	/// Returns a random permutation from zero to (n - 1)
+	public int[] randomPermutation (int n) {
+		int a, b, t, i;
+		int[] permutation = new int[n];
+		for (i = 0; i < n; permutation[i] = i, i++);
+		for (i = 0; i < n; i++) {
+			a = random.nextInt(n);
+			b = random.nextInt(n);
+			t = permutation[a];
+			permutation[a] = permutation[b];
+			permutation[b] = t;
+		}
+        return permutation;
+	}
+
+	/// Computes the total membership changes across clusters.
+	public int totalMembershipChanges (Cluster [] clusters) {
+		int changes = 0;
+
 		for (Cluster c : clusters) {
-			c.stage();
-		} 
+			changes += c.membershipChanges();
+		}
+
+		return changes;
+	}
+
+	/// Euclidean distance between feature vectors 'a' and 'b'.
+	public double euclideanDistance (float[] a, float[] b) {
+		int n = (a.length < b.length ? a.length : b.length);
+		double d = 0;
+
+		for (int i = 0; i < n; i++) {
+			d += (b[i] - a[i]) * (b[i] - a[i]);
+		}
+
+		return Math.sqrt(d);
+	}
+
+	/// Returns the closest prototype to the given feature vector.
+	public Cluster closestPrototype(float[] v, Cluster[] clusters) {
+		double d, min = 10E10;
+		Cluster p = null;
+
+		for (Cluster c : clusters) {
+			if ((d = euclideanDistance(v, c.prototype)) < min) {
+				min = d;
+				p = c;
+			}
+		}
+
+		return p;
 	}
 
 	/// Assigns datapoints to their nearest clusters using Euclidean distance.
-	public void clusterDatapoints (int[] permutation, Vector<float[]> data, Cluster[] clusters) {
+	public void performClustering (int[] permutation, Vector<float[]> data, Cluster[] clusters) {
 		int i, j, n = data.size();
 		float v[];
-		Cluster c;
 
+		/// Move current members to previous, reset current members.
+		for (Cluster c : clusters) {
+			c.previousMembers = c.currentMembers;
+			c.currentMembers = new HashSet<Integer>();
+		}
+
+		/// Assign datapoints to clusters.
 		for (i = 0; i < n; i++) {
-			v = data[permutation[i]];
-			c = closestPrototype(v, clusters);
-
+			v = data.elementAt(permutation[i]);
+			Cluster c = closestPrototype(v, clusters);
+			c.currentMembers.add(permutation[i]);
 		}
 	}
 
-
-	/// Generates a list of numbers from 0 to x
-	public int[] loop(int x) {
-    	int[] a = new int[x];
-    	for (int i = 0; i < x; ++i) {
-       	  a[i] = i;
-    	}
-    	return a;
+	/// Recomputes the prototypes for all clusters.
+	public void recomputeMeanPositions(Vector<float[]> data, Cluster[] clusters) {
+		for (Cluster c : clusters) {
+			c.updatePrototype(data);
+		}
 	}
 
 	public boolean train()
 	{
-
-		/// Step 1: Partition training data to random clusters.
-		randomPartition(this.trainData, this.clusters);
-		printClusters(this.clusters);
-
-		/// Step 2: Using a random permutation, iterate through data points and
-		///			assign them to nearest prototype with Euclidean distance
-		///			measure.
-		//int[] permutation = randomPermutation(self.clusters.size());
-		clusterDatapoints(permutation, self.trainData, self.clusters);
-
-		/// Step 3: Recompute the mean position of the prototypes.
-
-		/// Step 4: Check whether membership is stable (below threshold) to stop.
-
-
-		// Step 1: Select an initial random partioning with k clusters
-		//partitionClusters();
-
-
-		//showMembers();
-
-
-	 	//implement k-means algorithm here:
+		//implement k-means algorithm here:
 		// Step 1: Select an initial random partioning with k clusters
 		// Step 2: Generate a new partition by assigning each datapoint to its closest cluster center
 		// Step 3: recalculate cluster centers
 		// Step 4: repeat until clustermembership stabilizes
+
+		/// Step 1: Partition training data to random clusters.
+		randomPartition(this.trainData, this.clusters);
+		recomputeMeanPositions(this.trainData, this.clusters);
+
+		/* DEBUG */
+		System.out.println("****************************** Step 1: Partitions ******************************");
+		printClusters(this.clusters);
+		System.out.println("***************************** Step (2,3): Training *****************************");
+		int delta = 0;
+		int round = 0;
+
+		do {
+			/* DEBUG */
+			System.out.format("\n\nRound %d, Changed (previous cycle) = %d\n\n", round, delta);
+			round++;
+
+			/// Step 2: Obtain random permutation, reassign datapoints to clusters.
+			int[] indexPermutation = randomPermutation(this.trainData.size());
+			performClustering(indexPermutation, this.trainData, this.clusters);
+
+			/// Step 3: Recompute mean positions of prototypes.
+			recomputeMeanPositions(this.trainData, this.clusters);
+
+			/* DEBUG */
+			printClusters(this.clusters);
+
+		} while ((delta = totalMembershipChanges(this.clusters)) > 0);
+
+		/* DEBUG */
+		System.out.format("\n\nStopped on round %d, Changed (previous cycle) = %d\n\n", round, delta);
+
 		return false;
+	}
+
+
+	/****************************** TESTING METHODS *******************************/
+
+	/// Returns a list of all Clusters containing indices 0 -> n.
+	Cluster[] getAssignedClusters (int n , Cluster[] clusters) {
+		Cluster[] assignedClusters = new Cluster[n];
+
+		for (int i = 0; i < n; i++) {
+			for (Cluster c : clusters) {
+				if (c.containsIndex(i)) {
+					assignedClusters[i] = c;
+					break;
+				}
+			}
+		}
+		return assignedClusters;
 	}
 
 	public boolean test()
@@ -200,6 +318,37 @@ public class KMeans extends ClusteringAlgorithm
 		// count number of hits
 		// count number of requests
 		// set the global variables hitrate and accuracy to their appropriate value
+
+		/// Step 1: Iterate through all clients, and find their corresponding clusters.
+		int n = this.testData.size();
+		Cluster[] assignedClusters = getAssignedClusters(n, this.clusters);
+
+		/// Step 2: Iterate through all clients, along with their corresponding clusters.
+		///			Count prefetched, hits, requests.
+		int prefetched = 0, hits = 0, requests = 0;
+		for (int i = 0; i < n; i++) {
+			float[] v = this.testData.elementAt(i);
+			float[] p = assignedClusters[i].prototype;
+
+			for (int j = 0; j < dim; j++) {
+				Boolean wasPrefetched = (p[i] > prefetchThreshold);
+
+				/// Add to requests.
+				requests += (v[i] != 0);
+
+				/// Add to prefetched.
+				prefetched += (wasPrefetched == true ? 1 : 0);
+				
+				/// Add to hits if
+				/// 1. Didn't request the site and site wasn't prefetched.
+				/// 2. Did request the site and site was prefetched.
+				if ((v[i] == 0) ^ wasPrefetched) {
+					hits++;
+				}
+			}
+
+		}
+
 		return true;
 	}
 
