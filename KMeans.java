@@ -325,15 +325,23 @@ public class KMeans extends ClusteringAlgorithm
 
 		/// Step 2: Iterate through all clients, along with their corresponding clusters.
 		///			Count prefetched, hits, requests.
-		int hits = 0, requests = 0;
+		int prefetched = 0, hits = 0, requests = 0;
 		for (int i = 0; i < n; i++) {
 			float[] v = this.testData.elementAt(i);
 			float[] p = assignedClusters[i].prototype;
 
 			for (int j = 0; j < dim; j++) {
 				Boolean wasPrefetched = (p[i] > prefetchThreshold);
+
+				/// Add to requests.
+				requests += (v[i] != 0);
+
+				/// Add to prefetched.
 				prefetched += (wasPrefetched == true ? 1 : 0);
 				
+				/// Add to hits if
+				/// 1. Didn't request the site and site wasn't prefetched.
+				/// 2. Did request the site and site was prefetched.
 				if ((v[i] == 0) ^ wasPrefetched) {
 					hits++;
 				}

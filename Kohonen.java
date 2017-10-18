@@ -32,6 +32,8 @@ public class Kohonen extends ClusteringAlgorithm
 	{
 			float[] prototype;
 
+			int x, y;
+
 			Set<Integer> currentMembers;
 
 			public Cluster()
@@ -86,38 +88,63 @@ public class Kohonen extends ClusteringAlgorithm
 		return Math.sqrt(sum);
 	}
 
+	/// Find the best matching unit (BMU)
+	public Cluster findBMU()
+	{	
+		/// Find BMU by iterating through all prototypes
+		float minDist = Float.MAX_VALUE;
+		Cluster BMU;
+		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
+		{
+			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
+			{
+				float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2])
+				if( dist < minDist)
+						{
+					minDist = dist;	
+					BMU = clusters[protIdx1][protIdx2];
+					BMU.x  = protIdx1;
+					BMU.y = protIdx2;
+				}
+			{
+		}
+		return BMU;
+	}
+
+	/// Adjust all prototypes in the neighbourhood of the BMU
+	public void adjustNeighbourhood(Cluster BMU, double radius, double learnRate)
+	{
+		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
+		{
+			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
+			{
+				/// If a prototype is within the radius, adjust it
+				double dist = Math.sqrt((protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y));
+				if ( dist <= radius ) 
+				{
+					clusters[protIdx1][protIdx2] = (1-learnRate) * clusters[protIdx1][protIdx2] + learnRate * trainVec;
+				}
+	}
+
 	public boolean train()
 	{
 		/*
 		/// Repeat 'epochs' times:
 		for( int t = 0; t < this.epochs; t++)
 		{	
+			if( this.epochs % t
 			/// Calculate current learning rate and radius
-			learnRate = 0.8 * (1 - (t / this.epochs));
-			radius = this.n / 2 * (1 - (t / this.epochs));
+			double learnRate = 0.8 * (1 - (t / this.epochs));
+			double radius = this.n / 2 * (1 - (t / this.epochs));
 			/// Iterate through all training points
 			for( int trainIdx = 0; trainIdx < trainData.size(); trainIdx++ )
 			{
 				float[] trainVec = trainData.get(trainIdx);
-				/// Find BMU by iterating through all prototypes
-				float minDist = Float.MAX_VALUE;
-				Cluster BMU;
-				for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
-				{
-					for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
-					{
-						float distToProt = euclideanDistance(trainVec,clusters[protIdx1][protIdx2]);
-						if( dist < minDist)
-						{
-							minDist = dist;
-							BMU = clusters[protIdx1][protIdx2];
-						}
-					{
-				}
+				Cluster BMU = findBMU();
+				adjustNeighbourhood(BMU, radius, learnRate);
+				
 			}
 			
-	
-		
 			// For each vector its Best Matching Unit is found, and :
 				// Step 4: All nodes within the neighbourhood of the BMU are changed, you don't have to use distance relative learning.
 		}
