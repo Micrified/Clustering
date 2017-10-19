@@ -218,7 +218,7 @@ public class KMeans extends ClusteringAlgorithm
 
 		do {
 			/* DEBUG */
-			System.out.format("\n\nEpoch %d, Changed (previous cycle) = %d\n\n", round, delta);
+			System.out.format("\n\nRound %d, Changed (previous cycle) = %d\n\n", round, delta);
 			round++;
 
 			/// Step 2: Obtain random permutation, reassign datapoints to clusters.
@@ -299,7 +299,7 @@ public class KMeans extends ClusteringAlgorithm
 
 		/// Assign to global variables.
 		this.hitrate = ((double)hits / (double)requests);
-		this.accuracy = ((double)requests / (double)prefetched);
+		this.accuracy = ((double)hits / (double)prefetched);
 		showTest();
 		return true;
 	}
