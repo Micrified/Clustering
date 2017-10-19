@@ -60,7 +60,7 @@ public class Kohonen extends ClusteringAlgorithm
 		public void printDescription () {
 			int n = prototype.length;
 			System.out.println("----------------------------------[ Cluster ]-----------------------------------");
-			System.out.print("Coordinate:\t" + coord.toString() + "\n");
+			System.out.format("Coordinate:\t(%.5f, %.5f)\n", coord.x, coord.y);
 			System.out.format("Prototype:\t[%.5f, %.5f, %.5f, ... , %.5f, %.5f, %.5f]\n", prototype[0], prototype[1], prototype[2], prototype[n-3], prototype[n - 2], prototype[n - 1]);
 			System.out.print("Curr Memb:\t"); printSet(currentMembers);
 		}
