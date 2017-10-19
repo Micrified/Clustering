@@ -109,57 +109,6 @@ public class KMeans extends ClusteringAlgorithm
 			clusters[ic] = new Cluster(dim);
 	}
 
-	/******************************* PRINTING METHODS *****************************/
-
-	/// Prints the state of all clusters.
-	public void printClusters (Cluster[] clusters) {
-		for (Cluster c : clusters) {
-			c.printDescription();
-		} 
-	}
-
-	/// Prints an integer set. 
-	public static void printSet (Set<Integer> set) {
-		System.out.print("[");
-		Iterator<Integer> iterator = set.iterator();
-		while (iterator.hasNext()) {
-			Integer i = iterator.next();
-			System.out.format("%d", i);
-			if (iterator.hasNext() == true) {
-				System.out.print(",");
-			}
-		}
-		System.out.println("]");
-	}
-
-	/// Prints all information within a vector.
-	public static void printVector (Vector<float[]> vector) {
-		int m, n = vector.size();
-		float[] v;
-
-		for (int i = 0; i < n; i++) {
-			v = vector.get(i);
-			m = v.length;
-			System.out.format("%d) [", i);
-			for (int j = 0; j < m; j++) {
-				System.out.format("%.0f", v[j]);
-			}
-			System.out.println("]");
-		}
-	}
-
-	/// Prints a float array.
-	public static void printArray (float[] array) {
-		System.out.print("[");
-		for (int i = 0; i < array.length; i++) {
-			System.out.format("%.3f", array[i]);
-			if (i < array.length - 1) {
-				System.out.print(",");
-			}
-		}
-		System.out.println("]");
-	}
-
 	/******************************* TRAINING METHODS *****************************/
 
 	/// Partitions given data to random clusters.
@@ -269,7 +218,7 @@ public class KMeans extends ClusteringAlgorithm
 
 		do {
 			/* DEBUG */
-			System.out.format("\n\nRound %d, Changed (previous cycle) = %d\n\n", round, delta);
+			System.out.format("\n\nEpoch %d, Changed (previous cycle) = %d\n\n", round, delta);
 			round++;
 
 			/// Step 2: Obtain random permutation, reassign datapoints to clusters.
@@ -388,5 +337,56 @@ public class KMeans extends ClusteringAlgorithm
 	public void setPrefetchThreshold(double prefetchThreshold)
 	{
 		this.prefetchThreshold = prefetchThreshold;
+	}
+
+	/******************************* PRINTING METHODS *****************************/
+
+	/// Prints the state of all clusters.
+	public void printClusters (Cluster[] clusters) {
+		for (Cluster c : clusters) {
+			c.printDescription();
+		} 
+	}
+
+	/// Prints an integer set. 
+	public static void printSet (Set<Integer> set) {
+		System.out.print("[");
+		Iterator<Integer> iterator = set.iterator();
+		while (iterator.hasNext()) {
+			Integer i = iterator.next();
+			System.out.format("%d", i);
+			if (iterator.hasNext() == true) {
+				System.out.print(",");
+			}
+		}
+		System.out.println("]");
+	}
+
+	/// Prints all information within a vector.
+	public static void printVector (Vector<float[]> vector) {
+		int m, n = vector.size();
+		float[] v;
+
+		for (int i = 0; i < n; i++) {
+			v = vector.get(i);
+			m = v.length;
+			System.out.format("%d) [", i);
+			for (int j = 0; j < m; j++) {
+				System.out.format("%.0f", v[j]);
+			}
+			System.out.println("]");
+		}
+	}
+
+	/// Prints a float array.
+	public static void printArray (float[] array) {
+		System.out.print("[");
+		for (int i = 0; i < array.length; i++) {
+			System.out.format("%.3f", array[i]);
+			if (i < array.length - 1) {
+				System.out.print(",");
+			}
+		}
+		System.out.println("]");
 	}
 }
