@@ -113,8 +113,11 @@ public class KMeans extends ClusteringAlgorithm
 
 	/// Partitions given data to random clusters.
 	public void randomPartition (Vector<float[]> data, Cluster[] clusters) {
-		for (int i = 0; i < data.size(); i++) {
-			clusters[random.nextInt(clusters.length)].currentMembers.add(i);
+		int n = data.size(), k = clusters.length;
+		int[] indices = randomPermutation(n);
+
+		for (int i = 0; i < n; i++) {
+			clusters[i % k].currentMembers.add(indices[i]);
 		}
 	}
 
