@@ -32,6 +32,7 @@ public class Kohonen extends ClusteringAlgorithm
 	{
 			float[] prototype;
 
+			/// variables to store the position of the BMU in the map
 			int x, y;
 
 			Set<Integer> currentMembers;
@@ -41,12 +42,12 @@ public class Kohonen extends ClusteringAlgorithm
 				currentMembers = new HashSet<Integer>();
 			}
 
-			public float[] getFloat()
+			public float[] getPrototype()
 			{
 				return prototype;
 			}
 
-			public void setFloat(float[] newPrototype)
+			public void setPrototype(float[] newPrototype)
 			{
 				prototype = newPrototype;
 			}
@@ -68,7 +69,6 @@ public class Kohonen extends ClusteringAlgorithm
 		this.dim = dim;       
 		
 		Random rnd = new Random();
-
 		// Here n*n new cluster are initialized
 		clusters = new Cluster[n][n];
 		for (int i = 0; i < n; i++)  
@@ -77,18 +77,20 @@ public class Kohonen extends ClusteringAlgorithm
 			{
 				clusters[i][i2] = new Cluster();
 				clusters[i][i2].prototype = new float[dim];
-				/// initialize the prototype randomly
-				float[] currentPrototypes = clusters[i][i2].getFloat();
+				/// initialize the prototypes by assigning a random number between 0 to 1 to each feature
+				float[] currentPrototypes = clusters[i][i2].getPrototype();
 				for ( int idx = 0; idx < dim; idx++)
 				{
-					clusters[i][i2].setPrototype(idx, (float) Math.round(Math.random()) );
+                   			 clusters[i][i2].setPrototype(idx, rnd.nextFloat() );
 				}
 				
 			}
 		}
 	}
 
-	/// Method that calculates the euclidean distance between two vectors
+	/************************* TRAINING METHODS ****************************/
+
+	/// Method that calculates the euclidean distance between two float arrays
 	public double euclideanDistance(float[] vec1, float[] vec2)
 	{
 		double sum = 0;
@@ -103,13 +105,14 @@ public class Kohonen extends ClusteringAlgorithm
 	public Cluster findBMU(float[] client)
 	{	
 		/// Find BMU by iterating through all prototypes
+		/// BMU is the prototype that is closest to the client array vector
 		double minDist = Double.MAX_VALUE;
 		Cluster BMU = clusters[0][0];
 		for( int protIdx1 = 0; protIdx1 < this.n; protIdx1++ )
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
-				double distToProt = euclideanDistance(client, clusters[protIdx1][protIdx2].getFloat());
+				double distToProt = euclideanDistance(client, clusters[protIdx1][protIdx2].getPrototype());
 				if (distToProt < minDist)
 				{
 					minDist = distToProt;
@@ -122,6 +125,18 @@ public class Kohonen extends ClusteringAlgorithm
 		return BMU;
 	}
 
+	/// Adjust single cluster to make it more similar to the training vector
+	public void adjustCluster(double learnRate, Cluster cluster, float[] trainVec)
+	{
+	    float[] prototypeOfCluster = cluster.getPrototype();
+        for(int i = 0; i < trainVec.length; i++)
+        {
+            prototypeOfCluster[i] = (float) ((1-learnRate) * prototypeOfCluster[i] + learnRate * trainVec[i]);
+        }
+        cluster.setPrototype(prototypeOfCluster);
+	}
+
+
 	/// Adjust all prototypes in the neighbourhood of the BMU
 	public void adjustNeighbourhood(Cluster BMU, double radius, double learnRate, float[] trainVec)
 	{
@@ -129,16 +144,12 @@ public class Kohonen extends ClusteringAlgorithm
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
-				/// If a prototype is within the radius, adjust it
+				/// If a prototype is within the radius and therefore in the neighbourhood, adjust it
 				int manHatDist = Math.abs(protIdx1-BMU.x) + Math.abs(protIdx2-BMU.y);
 				if ( manHatDist <=  radius)
 				{
-					float[] prototypeOfCluster = clusters[protIdx1][protIdx2].getFloat();
-					for(int i = 0; i < trainVec.length; i++)
-					{
-						prototypeOfCluster[i] = (float) ((1-learnRate) * prototypeOfCluster[i] + learnRate * trainVec[i]);
-					}
-					clusters[protIdx1][protIdx2].setFloat(prototypeOfCluster);
+					Cluster currentCluster = clusters[protIdx1][protIdx2];
+					adjustCluster(learnRate,currentCluster, trainVec);
 				}
 			}
 		}
@@ -146,11 +157,10 @@ public class Kohonen extends ClusteringAlgorithm
 
 	public boolean train()
 	{
-		
 		/// Repeat 'epochs' times:
 		for( int t = 0; t < this.epochs; t++)
 		{
-            /// Print progress in percentages
+            		/// Print progress in percentages
 			System.out.print("\r[");
 			System.out.print(Math.round((1000.0*t)/this.epochs)/10.0+"%]");
 
@@ -164,59 +174,69 @@ public class Kohonen extends ClusteringAlgorithm
 				float[] trainVec = trainData.get(trainIdx);
 				Cluster BMU = findBMU(trainVec);
 				adjustNeighbourhood(BMU, radius, learnRate, trainVec);
-				
 			}
 		}
 		System.out.println();
 
-		/// Add train data to membership sets of clusters
+		/// Add train data to membership sets of clusters, mostly for visualization purposes
+		/// This membership assignment is not necessary, as it can be also calculated on the go in the test phase
+		for(int i = 0; i < trainData.size(); i++)
+		{
+		    Cluster closestPrototype = findBMU(trainData.get(i));
+		    closestPrototype.currentMembers.add(i);
+		}
 
-        for(int i = 0; i < trainData.size(); i++)
+		return true;
+	}
+
+	/********************** TEST METHODS ****************/
+
+	/// Find the prototype that contains the member of which the idx is given
+	public float[] findAssignedPrototype(int idxOfInput)
         {
-            Cluster closestPrototype = findBMU(trainData.get(i));
-            closestPrototype.currentMembers.add(i);
+	    for( int i = 0; i < this.n; i++ )
+	    {
+	        for( int j = 0; j < this.n; j++ )
+	        {
+	            if(clusters[i][j].currentMembers.contains(idxOfInput))
+	                return clusters[i][j].getPrototype();
+	        }
+	    }
+	    System.out.println("ERROR: training vector "+ idxOfInput + " was not assigned to a prototype");
+	    System.exit(0);
+	    return null;
         }
 
-        return true;
-	}
-	
 	public boolean test()
 	{
 	    double requests = 0, prefetched = 0, hits = 0;
-        // iterate along all clients
-        for( int i = 0; i < testData.size(); i++)
-        {
-            /// Find the closest cluster
-            float[] assignedPrototype = findBMU(trainData.get(i)).getFloat();
+            // iterate along all clients
+            for( int i = 0; i < testData.size(); i++)
+            {
+                /// Find the closest cluster
+                float[] assignedPrototype = findAssignedPrototype(i);
+                float[] testDataClient = testData.get(i);
 
-            float[] testDataClient = testData.get(i);
+                for (int j = 0; j < dim; j++)
+                {
+                    Boolean wasPrefetched = (assignedPrototype[i] > prefetchThreshold);
+                    Boolean requested = (testDataClient[i] != 0);
 
-            for (int j = 0; j < dim; j++) {
-                Boolean wasPrefetched = (assignedPrototype[i] > prefetchThreshold);
-                Boolean requested = (testDataClient[i] != 0);
+                    /// Add to requests.
+                    requests += (requested ? 1 : 0);
 
-                /// Add to requests.
-                requests += (requested ? 1 : 0);
+                    /// Add to prefetch
+                    prefetched += (wasPrefetched ? 1 : 0);
 
-                /// Add to prefetch
-                prefetched += (wasPrefetched ? 1 : 0);
-
-                if (requested && wasPrefetched)
-                    hits++;
-
+		    /// If something was requested and fetched, then we have a true positive, a hit
+                    if (requested && wasPrefetched)
+                        hits++;
+                }
             }
-        }
-        hitrate = hits/requests;
-        accuracy = hits/(prefetched);
-		// for each client find the cluster of which it is a member
-		// get the actual testData (the vector) of this client
-		// iterate along all dimensions
-		// and count prefetched htmls
-		// count number of hits
-		// count number of requests
-		// set the global variables hitrate and accuracy to their appropriate value
-		showTest();
-		return true;
+            hitrate = hits/requests;
+            accuracy = hits/(prefetched);
+            showTest();
+	    return true;
 	}
 
 
