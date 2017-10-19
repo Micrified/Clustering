@@ -55,7 +55,6 @@ public class Kohonen extends ClusteringAlgorithm
 			{
 				prototype[idx] = value;
 			}
-			
 	}
 	
 	public Kohonen(int n, int epochs, Vector<float[]> trainData, Vector<float[]> testData, int dim)
@@ -100,8 +99,8 @@ public class Kohonen extends ClusteringAlgorithm
 		return Math.sqrt(sum);
 	}
 
-	/// Find the best matching unit (BMU)
-	public Cluster findBMU(float[] trainVec)
+	/// Method that finds the best matching unit (BMU)
+	public Cluster findBMU(float[] client)
 	{	
 		/// Find BMU by iterating through all prototypes
 		double minDist = Double.MAX_VALUE;
@@ -110,7 +109,7 @@ public class Kohonen extends ClusteringAlgorithm
 		{
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
-				double distToProt = euclideanDistance(trainVec, clusters[protIdx1][protIdx2].getFloat());
+				double distToProt = euclideanDistance(client, clusters[protIdx1][protIdx2].getFloat());
 				if (distToProt < minDist)
 				{
 					minDist = distToProt;
@@ -131,8 +130,8 @@ public class Kohonen extends ClusteringAlgorithm
 			for( int protIdx2 = 0; protIdx2 < this.n; protIdx2++ )
 			{
 				/// If a prototype is within the radius, adjust it
-				float dist = (protIdx1-BMU.x)*(protIdx1-BMU.x) + (protIdx2-BMU.y)*(protIdx2-BMU.y);
-				if ( dist <= radius * radius) 
+				int manHatDist = Math.abs(protIdx1-BMU.x) + Math.abs(protIdx2-BMU.y);
+				if ( manHatDist <=  radius)
 				{
 					float[] prototypeOfCluster = clusters[protIdx1][protIdx2].getFloat();
 					for(int i = 0; i < trainVec.length; i++)
@@ -140,7 +139,6 @@ public class Kohonen extends ClusteringAlgorithm
 						prototypeOfCluster[i] = (float) ((1-learnRate) * prototypeOfCluster[i] + learnRate * trainVec[i]);
 					}
 					clusters[protIdx1][protIdx2].setFloat(prototypeOfCluster);
-					//clusters[protIdx1][protIdx2].setFloat((1-learnRate) * clusters[protIdx1][protIdx2].getFloat() + learnRate * trainVec);
 				}
 			}
 		}
@@ -151,13 +149,16 @@ public class Kohonen extends ClusteringAlgorithm
 		
 		/// Repeat 'epochs' times:
 		for( int t = 0; t < this.epochs; t++)
-		{	
-	
-			System.out.println(t/this.epochs);
+		{
+            /// Print progress in percentages
+			System.out.print("\r[");
+			System.out.print(Math.round((1000.0*t)/this.epochs)/10.0+"%]");
+
 			/// Calculate current learning rate and radius
 			float learnRate = (float) 0.8 * (1 - (t / this.epochs));
 			double radius = this.n / 2 * (1 - (t / this.epochs));
-			/// Iterate through all training points
+
+			/// Iterate through all training points. Find BMU for each training point and adjust BMU's neighbourhood
 			for( int trainIdx = 0; trainIdx < trainData.size(); trainIdx++ )
 			{
 				float[] trainVec = trainData.get(trainIdx);
@@ -166,14 +167,47 @@ public class Kohonen extends ClusteringAlgorithm
 				
 			}
 		}
-			
-		// Since training kohonen maps can take quite a while, presenting the user with a progress bar would be nice 
-		return true;
+		System.out.println();
+
+		/// Add train data to membership sets of clusters
+
+        for(int i = 0; i < trainData.size(); i++)
+        {
+            Cluster closestPrototype = findBMU(trainData.get(i));
+            closestPrototype.currentMembers.add(i);
+        }
+
+        return true;
 	}
 	
 	public boolean test()
 	{
-		// iterate along all clients
+	    double requests = 0, prefetched = 0, hits = 0;
+        // iterate along all clients
+        for( int i = 0; i < testData.size(); i++)
+        {
+            /// Find the closest cluster
+            float[] assignedPrototype = findBMU(trainData.get(i)).getFloat();
+
+            float[] testDataClient = testData.get(i);
+
+            for (int j = 0; j < dim; j++) {
+                Boolean wasPrefetched = (assignedPrototype[i] > prefetchThreshold);
+                Boolean requested = (testDataClient[i] != 0);
+
+                /// Add to requests.
+                requests += (requested ? 1 : 0);
+
+                /// Add to prefetch
+                prefetched += (wasPrefetched ? 1 : 0);
+
+                if (requested && wasPrefetched)
+                    hits++;
+
+            }
+        }
+        hitrate = hits/requests;
+        accuracy = hits/(prefetched);
 		// for each client find the cluster of which it is a member
 		// get the actual testData (the vector) of this client
 		// iterate along all dimensions
@@ -181,6 +215,7 @@ public class Kohonen extends ClusteringAlgorithm
 		// count number of hits
 		// count number of requests
 		// set the global variables hitrate and accuracy to their appropriate value
+		showTest();
 		return true;
 	}
 

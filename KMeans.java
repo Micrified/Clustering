@@ -350,7 +350,7 @@ public class KMeans extends ClusteringAlgorithm
 
 		/// Assign to global variables.
 		this.hitrate = ((double)hits / (double)requests);
-		this.accuracy = ((double)requests / (double)prefetched);
+		this.accuracy = ((double)hits / (double)prefetched);
 		showTest();
 		return true;
 	}
